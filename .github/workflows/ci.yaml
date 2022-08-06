@@ -1,6 +1,25 @@
 on: [pull_request, workflow_dispatch]
 name: ci
 jobs:
+  macos-ci:
+    name: macos-12-clang-14
+    runs-on: macos-12
+    steps:
+      - name: Setup clang
+        run: |
+          echo "CC=$(brew --prefix llvm@14)/bin/clang" >> $GITHUB_ENV
+          echo "CXX=$(brew --prefix llvm@14)/bin/clang++" >> $GITHUB_ENV
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/bazel
+          key: ${{ matrix.name }}-${{ hashFiles('WORKSPACE', 'third_party/**') }}
+          restore-keys: ${{ matrix.name }}-
+      - name: Build
+        run: bazel build //... ${{ matrix.bazel }}
+      - name: Test
+        run: bazel test //... ${{ matrix.bazel }}
+
   linux-ci:
     name: linux-${{ matrix.name }}
     runs-on: ${{ matrix.os }}
